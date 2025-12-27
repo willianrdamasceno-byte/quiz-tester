@@ -4,139 +4,117 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CyberShell Quiz // IT Challenge</title>
+    <title>CYBERSHELL // Knowledge Extraction</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
-      :root {
-        --neon-green: #00ff41;
-        --cyber-purple: #bc13fe;
-        --hacker-bg: #020202;
-      }
+      :root { --neon: #00ff41; --bg: #050505; }
       body {
+        background-color: var(--bg);
+        color: var(--neon);
         font-family: 'JetBrains Mono', monospace;
-        background-color: var(--hacker-bg);
-        color: var(--neon-green);
         margin: 0;
         overflow-x: hidden;
       }
-      
-      /* Canvas Background */
       #matrix-bg {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        top: 0; left: 0; width: 100%; height: 100%;
         z-index: -1;
-        opacity: 0.15;
-      }
-
-      /* Scanline Effect */
-      body::before {
-        content: " ";
-        display: block;
-        position: fixed;
-        top: 0; left: 0; bottom: 0; right: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
-        z-index: 9998;
-        background-size: 100% 4px;
-        pointer-events: none;
         opacity: 0.2;
+        filter: blur(1px);
       }
-
-      /* CRT Flicker */
-      @keyframes flicker {
-        0% { opacity: 0.98; }
-        5% { opacity: 0.95; }
-        10% { opacity: 0.98; }
-        100% { opacity: 1; }
+      .cyber-card {
+        background: rgba(0, 20, 0, 0.9);
+        border: 1px solid var(--neon);
+        box-shadow: 0 0 20px rgba(0, 255, 65, 0.15);
+        backdrop-filter: blur(10px);
       }
-      body::after {
+      /* Scanlines */
+      body::before {
         content: "";
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 255, 65, 0.01);
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
+        background-size: 100% 4px;
         z-index: 9999;
         pointer-events: none;
-        animation: flicker 0.15s infinite;
       }
-
-      .glitch {
-        position: relative;
-        text-shadow: 0 0 10px var(--neon-green);
+      @keyframes glitch {
+        0% { transform: translate(0); }
+        20% { transform: translate(-2px, 2px); }
+        40% { transform: translate(-2px, -2px); }
+        60% { transform: translate(2px, 2px); }
+        80% { transform: translate(2px, -2px); }
+        100% { transform: translate(0); }
       }
-      
-      .cyber-card {
-        background: rgba(5, 5, 5, 0.85);
-        border: 1px solid var(--neon-green);
-        box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
-        backdrop-filter: blur(5px);
-      }
-
-      .selection-green::selection {
-        background: var(--neon-green);
-        color: black;
-      }
+      .glitch:hover { animation: glitch 0.3s infinite; }
     </style>
-    
-    <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.1/dist/es-module-shims.js"></script>
 
+    <!-- Transpilador para rodar .tsx no navegador -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
     <script type="importmap">
-    {
-      "imports": {
-        "lucide-react": "https://esm.sh/lucide-react@^0.474.0",
-        "react-dom/": "https://esm.sh/react-dom@^19.0.0/",
-        "@google/genai": "https://esm.sh/@google/genai@^0.2.1",
-        "react/": "https://esm.sh/react@^19.0.0/",
-        "react": "https://esm.sh/react@^19.0.0",
-        "react-dom": "https://esm.sh/react-dom@^19.0.0"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.474.0",
+    "@google/genai": "https://esm.sh/@google/genai@0.2.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
   </head>
-  <body class="selection-green">
+  <body>
     <canvas id="matrix-bg"></canvas>
-    <div id="root"></div>
+    <div id="root">
+      <div class="h-screen flex items-center justify-center">
+        <div class="text-center animate-pulse">
+          <p class="text-sm tracking-[0.5em] mb-4">INITIALIZING_CORE_SYSTEM</p>
+          <div class="w-48 h-1 bg-[#00ff41]/20 mx-auto overflow-hidden">
+            <div class="w-full h-full bg-[#00ff41] animate-[loading_2s_infinite]"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script>
-      // Matrix Rain Effect
+      // Matrix Rain
       const canvas = document.getElementById('matrix-bg');
       const ctx = canvas.getContext('2d');
-
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-
-      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$#@%&*()';
-      const fontSize = 14;
-      const columns = canvas.width / fontSize;
-      const drops = Array(Math.floor(columns)).fill(1);
-
-      function draw() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = '#00ff41';
-        ctx.font = fontSize + 'px monospace';
-
-        for (let i = 0; i < drops.length; i++) {
-          const text = characters.charAt(Math.floor(Math.random() * characters.length));
-          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-            drops[i] = 0;
-          }
+      let w = canvas.width = window.innerWidth;
+      let h = canvas.height = window.innerHeight;
+      const chars = "0123456789ABCDEFHIJKLMNOPQRSTUVWXYZ<>[]{}";
+      const drops = Array(Math.floor(w/20)).fill(1);
+      function drawMatrix() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "#00ff41";
+        ctx.font = "15px monospace";
+        drops.forEach((y, i) => {
+          const text = chars[Math.floor(Math.random() * chars.length)];
+          ctx.fillText(text, i * 20, y * 20);
+          if (y * 20 > h && Math.random() > 0.975) drops[i] = 0;
           drops[i]++;
-        }
+        });
       }
+      setInterval(drawMatrix, 50);
+      window.addEventListener('resize', () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; });
 
-      setInterval(draw, 33);
-
-      window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      });
+      // Configuração Global para o Babel entender o ambiente
+      window.process = { env: { API_KEY: "" } };
     </script>
-    <script type="module" src="./index.tsx"></script>
+
+    <!-- O segredo: Babel processa o index.tsx como um módulo -->
+    <script type="text/babel" data-presets="react,typescript" data-type="module" src="index.tsx"></script>
+
+    <style>
+      @keyframes loading {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+    </style>
   </body>
 </html>
