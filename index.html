@@ -4,53 +4,66 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CYBERSHELL // Knowledge Extraction</title>
+    <title>CYBERSHELL v3.0 // Terminal de Conhecimento</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
-      :root { --neon: #00ff41; --bg: #050505; }
+      :root { --neon: #00ff41; --bg: #020202; --accent: #bc13fe; }
       body {
         background-color: var(--bg);
         color: var(--neon);
         font-family: 'JetBrains Mono', monospace;
         margin: 0;
-        overflow-x: hidden;
+        overflow: hidden;
       }
       #matrix-bg {
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        z-index: -1;
-        opacity: 0.2;
-        filter: blur(1px);
+        z-index: 0;
+        opacity: 0.1;
       }
-      .cyber-card {
-        background: rgba(0, 20, 0, 0.9);
-        border: 1px solid var(--neon);
-        box-shadow: 0 0 20px rgba(0, 255, 65, 0.15);
-        backdrop-filter: blur(10px);
+      .cyber-container {
+        position: relative;
+        z-index: 10;
+        height: 100vh;
+        overflow-y: auto;
       }
-      /* Scanlines */
-      body::before {
-        content: "";
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
+      /* Efeitos Visuais - pointer-events: none é CRITICO para os botões funcionarem */
+      .scanline {
+        width: 100%; height: 100%;
+        z-index: 1000;
+        background: linear-gradient(0deg, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.05) 50%);
         background-size: 100% 4px;
-        z-index: 9999;
+        position: fixed;
         pointer-events: none;
       }
-      @keyframes glitch {
-        0% { transform: translate(0); }
-        20% { transform: translate(-2px, 2px); }
-        40% { transform: translate(-2px, -2px); }
-        60% { transform: translate(2px, 2px); }
-        80% { transform: translate(2px, -2px); }
-        100% { transform: translate(0); }
+      .crt-flicker {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 255, 65, 0.01);
+        z-index: 1001;
+        pointer-events: none;
+        animation: flicker 0.15s infinite;
       }
-      .glitch:hover { animation: glitch 0.3s infinite; }
+      @keyframes flicker {
+        0% { opacity: 0.1; }
+        50% { opacity: 0.15; }
+        100% { opacity: 0.1; }
+      }
+      .cyber-card {
+        background: rgba(0, 15, 0, 0.9);
+        border: 2px solid var(--neon);
+        box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+      }
+      .glitch-text {
+        text-shadow: 2px 0 var(--accent), -2px 0 #0ff;
+      }
+      /* Scrollbar Hacker */
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-track { background: #000; }
+      ::-webkit-scrollbar-thumb { background: var(--neon); }
     </style>
 
-    <!-- Transpilador para rodar .tsx no navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <script type="importmap">
@@ -69,52 +82,37 @@
   </head>
   <body>
     <canvas id="matrix-bg"></canvas>
-    <div id="root">
-      <div class="h-screen flex items-center justify-center">
-        <div class="text-center animate-pulse">
-          <p class="text-sm tracking-[0.5em] mb-4">INITIALIZING_CORE_SYSTEM</p>
-          <div class="w-48 h-1 bg-[#00ff41]/20 mx-auto overflow-hidden">
-            <div class="w-full h-full bg-[#00ff41] animate-[loading_2s_infinite]"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div class="scanline"></div>
+    <div class="crt-flicker"></div>
+    
+    <div id="root" class="cyber-container"></div>
 
     <script>
-      // Matrix Rain
       const canvas = document.getElementById('matrix-bg');
       const ctx = canvas.getContext('2d');
       let w = canvas.width = window.innerWidth;
       let h = canvas.height = window.innerHeight;
-      const chars = "0123456789ABCDEFHIJKLMNOPQRSTUVWXYZ<>[]{}";
-      const drops = Array(Math.floor(w/20)).fill(1);
-      function drawMatrix() {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-        ctx.fillRect(0, 0, w, h);
+      const columns = Math.floor(w / 20);
+      const drops = Array(columns).fill(1);
+      function draw() {
+        ctx.fillStyle = "rgba(0,0,0,0.05)";
+        ctx.fillRect(0,0,w,h);
         ctx.fillStyle = "#00ff41";
         ctx.font = "15px monospace";
-        drops.forEach((y, i) => {
-          const text = chars[Math.floor(Math.random() * chars.length)];
-          ctx.fillText(text, i * 20, y * 20);
-          if (y * 20 > h && Math.random() > 0.975) drops[i] = 0;
+        for(let i=0; i<drops.length; i++) {
+          const text = String.fromCharCode(Math.random()*128);
+          ctx.fillText(text, i*20, drops[i]*20);
+          if(drops[i]*20 > h && Math.random() > 0.975) drops[i] = 0;
           drops[i]++;
-        });
+        }
       }
-      setInterval(drawMatrix, 50);
-      window.addEventListener('resize', () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; });
-
-      // Configuração Global para o Babel entender o ambiente
-      window.process = { env: { API_KEY: "" } };
+      setInterval(draw, 50);
+      window.addEventListener('resize', () => { 
+        w = canvas.width = window.innerWidth; 
+        h = canvas.height = window.innerHeight; 
+      });
     </script>
 
-    <!-- O segredo: Babel processa o index.tsx como um módulo -->
     <script type="text/babel" data-presets="react,typescript" data-type="module" src="index.tsx"></script>
-
-    <style>
-      @keyframes loading {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-      }
-    </style>
   </body>
 </html>
